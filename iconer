@@ -1,0 +1,221 @@
+#!/bin/bash
+
+
+version="0.1.0"
+debug=true
+
+function usage
+{
+    echo -e "--------------------------------------------------------------------------------"
+    echo -e "  \033[34miconer\033[0m $version - App icon generator for Apple platforms."
+    echo -e "--------------------------------------------------------------------------------"
+    echo -e ""
+    echo -e "   \033[1mBasic usage:\033[0m"
+    echo -e "      iconer file1 file2 fileN"
+    echo -e "      iconer [-h, --help]"
+    echo -e ""
+    echo -e ""
+    echo -e "   \033[1mPlatform options:\033[0m"
+    echo -e "      iconer file1 [-p, --profile] <platform>"
+    echo -e ""
+    echo -e "     \033[4mvalues:\033[0m"
+    echo -e "       ios - Icons for iOS devices"
+    echo -e "       osx - Icons for OS X devices"
+    echo -e "       watchos - Icons for watchOS devices"
+    echo -e ""
+    echo -e ""
+    echo -e "   \033[1mFormat options:\033[0m"
+    echo -e "       iconer file1 [-f, --format] <format>"
+    echo -e ""
+    echo -e "     \033[4mvalues:\033[0m"
+    echo -e "       image - Separate icon files (.png)"
+    echo -e "       asset - Asset catalog (.xcasset)"
+    echo -e ""
+    echo -e ""
+    echo -e "   \033[1mBackground options:\033[0m"
+    echo -e "       iconer file1 [-b, --background] <color>"
+    echo -e ""
+    echo -e "     \033[4mcolor can be:\033[0m"
+    echo -e "       name of the color (blue)"
+    echo -e "       hexa color code (#cafe00)"
+    echo -e "       rgb color code (rgb(255,255,255))"
+    echo -e ""
+}
+
+
+function log {
+    # FUNCNAME
+    # BASH_SOURCE
+    # BASH_LINENO
+    if [ $# -ne 1 ] ; then
+        echo "Illegal number of log parameters (line: $BASH_LINENO)"
+        return
+    fi
+    if [ "$debug" = true ] ; then
+        echo $1
+    fi
+}
+
+# function log() {
+#     echo "[$( caller )] $*" >&2
+#     echo "BASH_SOURCE: ${BASH_SOURCE[*]}"
+#     echo "BASH_LINENO: ${BASH_LINENO[*]}"
+#     echo "FUNCNAME: ${FUNCNAME[*]}"
+# }
+
+# function foobar() {
+#     log "failed:" "$@"
+# }
+
+# foobar "$@"
+
+# echo "Welcome to Icon generator"
+# echo "Version: ${version}"
+
+
+###############################################################################
+#   Alpha channel check
+###############################################################################
+
+function hasAlpha {
+    #0 = true || 1 = false
+    if [ $# -ne 1 ] || [ ! -f "$1" ]; then
+        return 1
+    fi
+    output="$(sips -g hasAlpha "$1")"
+
+    if [[ $output == *"yes"* ]] ; then
+        return 0
+    fi
+    return 1
+}
+
+###############################################################################
+#   Set parameters
+###############################################################################
+
+platform="ios"
+sizes=(29 40 58 76 80 87 120 152 167 180)
+default=false
+files=()
+background="black"
+alphaWarning=true
+
+if [ $# -lt 1 ] ; then
+    usage
+    exit
+fi
+
+while [[ $# > 0 ]]
+do
+    key="$1"
+
+    case $key in
+        -h|--help)
+            usage
+            exit
+        ;;
+        -p|--platform)
+            case "$2" in
+            "watchos")
+                platform="watchos"
+                sizes=(48 55 58 87 80 172 196)
+            ;;
+            "osx")
+                platform="osx"
+                sizes=(16 32 64 128 256 512)
+            ;;
+            "ios")
+                platform="ios"
+                sizes=(29 40 58 76 80 87 120 152 167 180)
+            ;;
+            *)
+                echo "Error: invalid platform! (avilable: ios, osx, watchos)"
+                exit
+            ;;
+            esac
+            shift
+        ;;
+        -b|--background)
+            background="$2"
+            alphaWarning=false
+        ;;
+        --default)
+            default=true
+            shift
+        ;;
+        *)
+            if [ -f "$key" ]; then
+                files+=("$key")
+            fi
+        ;;
+    esac
+shift
+done
+
+
+###############################################################################
+#   Do the thing!
+###############################################################################
+
+count=0
+#json="{\n\timages\" : ["
+
+#function join { local IFS="$1"; shift; echo "$*"; }
+function join { local d=$1; shift; echo -n "$1"; shift; printf "%s" "${@/#/$d}"; }
+
+
+#imgs=()
+
+for file in ${files[@]}; do
+    #ICON_DIR="$( cd "$( dirname "${ICON_FILE}" )" && pwd )"
+    path=$(dirname "$file")
+    base=$(basename "$file")
+    name=`rev <<< "$base" | cut -d"." -f2- | rev`
+    ext=`rev <<< "$base" | cut -d"." -f1 | rev`
+    source_name="$name"
+
+    rm -rf "$path/$platform"
+    mkdir "$path/$platform"
+
+    if hasAlpha $file; then
+        if $alphaWarning ; then
+            echo -e "\033[1mWarning:\033[0m file ($file) has alpha channels...";
+        fi
+
+        if command -v convert >/dev/null 2>&1 ; then
+            convert "$file" -background "$background" -alpha remove -alpha off "$path/$name-no-alpha"."$ext"
+            source_name="$name-no-alpha"
+            if $alphaWarning ; then
+                echo -e "Removing alpha channels... (Use -b, --background to use custom background color)"
+            fi
+        else
+            echo -e "You can not submit to the App Store if your icons contains alpha channels."
+            echo -e "To auto-remove alpha channel run 'brew install imagemagick' first."
+        fi
+    fi
+
+    for size in ${sizes[@]}; do
+        sips -Z "$size" "$path/$source_name.$ext" --out "$path/$platform/$name-$size.$ext" &> /dev/null >&2
+        count=$((count+1))
+ #       imgs+=("\t\t{\n\t\t\t\"size\" : \"${size}x${size}\",\n\t\t\t\"idiom\" : \"iphone\",\n\t\t\t\"filename\" : \"$name-$size.$ext\",\n\t\t\t\"scale\" : \"2x\"\n\t\t}")
+    done
+
+    rm -rf "$path/$source_name.$ext"
+done
+
+
+
+#json="$json\n $(join ',\n' "${imgs[@]}")"
+
+#json="$json\n\t],\n\t\"info\" : {\n\t\t\"version\" : 1,\n\t\t\"author\" : \"xcode\"\n\t}\n}\n"
+#echo -e $json #> "$path/contents.json"
+
+# echo "Done. $count icons were generated for $platform."
+
+
+
+
+
+
+
