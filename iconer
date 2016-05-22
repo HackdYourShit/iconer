@@ -1,8 +1,12 @@
 #!/bin/bash
 
 
-version="0.2.0"
+version="0.2.1"
 debug=true
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+
 
 function usage
 {
@@ -167,6 +171,7 @@ background="black"
 info=false
 target_dir=false
 assets=false
+mask=false
 
 if [ $# -lt 1 ]; then
     usage
@@ -203,6 +208,9 @@ do
         ;;
         -a|--assets)
             assets=true
+        ;;
+        -m|--mask)
+            mask=true
         ;;
         -i|--info)
             info=true
@@ -507,21 +515,30 @@ EOF
         case "$platform" in
         "ios")
             for size in 29 40 58 76 80 87 120 152 167 180; do
-                sips -Z "$size" "$source_file" --out "$platform_dir/$name-$size.$ext" &> /dev/null >&2
+                sips -Z "$size" "$source_file" --out "$platform_dir/$name-$size.$ext" >/dev/null 2>&1
                 count=$((count+1))
             done
             echo -e "$ios" > "$platform_dir/Contents.json"
         ;;
         "watchos")
             for size in 48 55 58 87 80 172 196; do
-                sips -Z "$size" "$source_file" --out "$platform_dir/$name-$size.$ext" &> /dev/null >&2
+                sips -Z "$size" "$source_file" --out "$platform_dir/$name-$size.$ext" >/dev/null 2>&1
+
+                if $mask && command -v composite >/dev/null 2>&1 ; then
+                    sips -Z "$size" "$DIR/Mask.png" --out "$platform_dir/Mask-$size.png" >/dev/null 2>&1
+                    composite -alpha on "$platform_dir/$name-$size.$ext" "$platform_dir/Mask-$size.png" "$platform_dir/Mask-$size.png" "$platform_dir/$name-$size.$ext"
+                    rm "$platform_dir/Mask-$size.png"
+                else
+                    info "To mask watchOS images run 'brew install imagemagick' first."
+                fi
+
                 count=$((count+1))
             done
             echo -e "$watchos" > "$platform_dir/Contents.json"
         ;;
         "osx")
             for size in 16 32 64 128 256 512 1024; do
-                sips -Z "$size" "$source_file" --out "$platform_dir/$name-$size.$ext" &> /dev/null >&2
+                sips -Z "$size" "$source_file" --out "$platform_dir/$name-$size.$ext" >/dev/null 2>&1
                 count=$((count+1))
             done
             echo -e "$osx" > "$platform_dir/Contents.json"
@@ -531,7 +548,6 @@ EOF
 done
 
 info "$count icon files are generated."
-
 
 
 
