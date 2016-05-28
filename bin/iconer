@@ -1,11 +1,11 @@
 #!/bin/bash
 
 
-version="0.3.0"
+version="0.3.2"
 debug=true
 
 #directory="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-directory=$(dirname $([ -L $0 ] && readlink -f $0 || echo $0))
+directory=$(dirname $([ -L $0 ] && readlink $0 || echo $0))
 
 #echo "$directory"
 
