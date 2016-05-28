@@ -1,3 +1,9 @@
+## 0.3.4 (2016-05-28)
+
+Bugfixes:
+  - resources directory fix
+
+
 ## 0.3.3 (2016-05-28)
 
 Bugfixes:

@@ -19,16 +19,14 @@ function scriptpath {
 }
 
 
-version="0.3.3"
+version="0.3.4"
 debug=true
 
 
 directory=$(dirname $([ -L $0 ] && scriptpath $0 || echo $0))
 
 
-echo $directory
-
-resources="${directory}/../"
+resources="${directory}/../resources"
 
 platforms=("ios" "watchos" "osx")
 files=()
