@@ -4,7 +4,11 @@
 version="0.3.0"
 debug=true
 
-directory="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+#directory="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+directory=$(dirname $([ -L $0 ] && readlink -f $0 || echo $0))
+
+#echo "$directory"
+
 resources="${directory}/../resources"
 
 platforms=("ios" "watchos" "osx")
@@ -132,7 +136,7 @@ function hasValidSize {
 
 
 if [ $# -lt 1 ]; then
-    usage
+    echo "iconer v${version} - App icon generator for Apple platforms"
     exit
 fi
 

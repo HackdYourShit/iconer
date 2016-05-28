@@ -1,3 +1,10 @@
+## 0.3.1 (2016-05-28)
+
+Bugfixes:
+  - manual naming
+  - script base directory detection
+
+
 ## 0.3.0 (2016-05-28)
 
 Resources in separate bundle
