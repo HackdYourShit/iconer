@@ -1,0 +1,286 @@
+#!/bin/bash
+
+
+version="0.3.0"
+debug=true
+
+directory="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+resources="${directory}/../resources"
+
+platforms=("ios" "watchos" "osx")
+files=()
+background="black"
+info=false
+target_dir=false
+mask=false
+
+
+# function log {
+#     # FUNCNAME
+#     # BASH_SOURCE
+#     # BASH_LINENO
+#     if [ $# -ne 1 ] ; then
+#         echo "Illegal number of log parameters (line: $BASH_LINENO)"
+#         return
+#     fi
+#     if [ "$debug" = true ] ; then
+#         echo $1
+#     fi
+# }
+
+# function log() {
+#     echo "[$( caller )] $*" >&2
+#     echo "BASH_SOURCE: ${BASH_SOURCE[*]}"
+#     echo "BASH_LINENO: ${BASH_LINENO[*]}"
+#     echo "FUNCNAME: ${FUNCNAME[*]}"
+# }
+
+# function foobar() {
+#     log "failed:" "$@"
+# }
+
+# foobar "$@"
+
+# echo "Welcome to Icon generator"
+# echo "Version: ${version}"
+
+
+# function console
+# {
+#     if [ $# -ne 1 ] ; then
+#         echo "Illegal number of log parameters (line: $BASH_LINENO)"
+#         return
+#     fi
+
+#     from=("b" "\/b" "blue" "\/blue")
+#     into=("1" "0" "34" "0")
+
+#     res=$1
+#     for ((i=0;i<${#from[@]};i++)); do
+#         f=${from[$i]}
+#         t=${into[$i]}
+
+#         # echo "$i: $f $t "
+
+        # res=$(sed "s/\[${f}\]/\\\033\[${t}m/g" <<< "$res")
+#     done
+
+#     echo -e "$res"
+# }
+
+
+# console "[b]helloka[/b] valami [blue]kék színű[/blue] izé"
+
+#function join { local IFS="$1"; shift; echo "$*"; }
+
+# function join {
+#     local d=$1
+#     shift
+#     echo -n "$1"
+#     shift
+#     printf "%s" "${@/#/$d}"
+# }
+
+###############################################################################
+#   Log info
+###############################################################################
+
+function info {
+    if $info; then
+        echo -e $1
+    fi
+}
+
+###############################################################################
+#   Image file validations
+###############################################################################
+
+function hasAlpha {
+    #0 = true || 1 = false
+    if [ $# -ne 1 ] || [ ! -f "$1" ]; then
+        return 1
+    fi
+    output="$(sips -g hasAlpha "$1")"
+
+    if [[ $output == *"yes"* ]] ; then
+        return 0
+    fi
+    return 1
+}
+
+function hasValidSize {
+    #0 = true || 1 = false
+    if [ $# -ne 1 ] || [ ! -f "$1" ]; then
+        return 1
+    fi
+
+    width="$(sips -g pixelWidth "$1"|grep pixelWidth)"
+    height="$(sips -g pixelHeight "$1"|grep pixelHeight)"
+
+    if [[ "$width" == *"1024"* ]] && [[ "$height" == *"1024"* ]]; then
+        return 0
+    fi
+    return 1
+}
+
+
+
+###############################################################################
+#   Set parameters
+###############################################################################
+
+
+
+if [ $# -lt 1 ]; then
+    usage
+    exit
+fi
+
+while [[ $# > 0 ]]
+do
+    key="$1"
+
+    case $key in
+        -h|--help)
+            man iconer
+            exit
+        ;;
+        -v|--version)
+            echo "iconer v${version} - App icon generator for Apple platforms"
+            exit
+        ;;
+        -i|--info)
+            info=true
+        ;;
+        -p|--platform)
+            case "$2" in
+            ios|osx|watchos)
+                platforms=("$2")
+            ;;
+            *)
+                echo "Error: invalid platform! (avilable: ios, osx, watchos)"
+                exit
+            ;;
+            esac
+            shift
+        ;;
+        -t|--target)
+            target_dir="$2"
+            shift
+        ;;
+        -b|--background)
+            background="$2"
+        ;;
+        -m|--mask)
+            mask=true
+        ;;
+        *)
+            if [ -f "$key" ]; then
+                files+=("$key")
+            fi
+        ;;
+    esac
+    shift
+done
+
+###############################################################################
+#   Do the thing!
+###############################################################################
+
+if [ ${#files[@]} -eq 0 ]; then
+    echo "No valid files are provided."
+    exit
+fi
+
+count=0
+
+for file in ${files[@]}; do
+    if ! hasValidSize "${file}"; then
+        info "\033[1mWarning:\033[0m the image size should be exactly 1024x1024 pixels."
+    fi
+
+    path=$(dirname "$file")
+    base=$(basename "$file")
+    name=`rev <<< "$base" | cut -d"." -f2- | rev`
+    ext=`rev <<< "$base" | cut -d"." -f1 | rev`
+    work_dir="${path}/${name}-iconer"
+
+    if [ -d "$target_dir" ]; then
+        work_dir="${target_dir%/}/${name}-iconer"
+    fi
+
+    mkdir -p "$work_dir"
+
+    source_file="${work_dir}/iTunesArtwork"
+
+    sips -Z 1024 "${file}" --out "${source_file}" >/dev/null 2>&1
+
+    if hasAlpha "$file"; then
+        info "\033[1mWarning:\033[0m file ($file) has alpha channels..."
+
+        if command -v convert >/dev/null 2>&1 ; then
+            #convert "${source_file}" -background "${background}" -alpha remove -alpha off -set colorspace RGB -separate "${source_file}.jpg"
+            convert "${source_file}" -background "${background}" -alpha remove -alpha off "${source_file}.jpg"
+            sips -s format png "${source_file}.jpg" --out "${source_file}" >/dev/null 2>&1
+            rm "${source_file}.jpg"
+            info "Removing alpha channels... (Use -b, --background to use custom background color)"
+        else
+            info "You can not submit to the App Store if your icons contains alpha channels."
+            info "To auto-remove alpha channel run 'brew install imagemagick' first."
+        fi
+    fi
+
+    for platform in ${platforms[@]}; do
+        p_dir="$work_dir/$platform.xcassets/${name}.appiconset"
+        mkdir -p "${p_dir}"
+
+        contents=$(cat ${resources}/${platform}.json)
+        contents=$(sed "s/\${name}/${name}/g" <<< "$contents")
+        echo -e "${contents}" > "${p_dir}/Contents.json"
+
+        case "$platform" in
+        "ios")
+            for size in 29 40 58 76 80 87 120 152 167 180; do
+                sips -Z "${size}" "${source_file}" --out "${p_dir}/${name}-${size}.${ext}" >/dev/null 2>&1
+                count=$((count+1))
+            done
+        ;;
+        "watchos")
+            for size in 48 55 58 87 80 172 196; do
+                sips -Z "${size}" "${source_file}" --out "${p_dir}/${name}-${size}.${ext}" >/dev/null 2>&1
+
+                if $mask && command -v composite >/dev/null 2>&1 ; then
+                    mask_file="${p_dir}/Mask-${size}.png"
+                    icon_file="${p_dir}/$name-${size}.${ext}"
+
+                    sips -Z "${size}" "${resources}/Mask.png" --out "${mask_file}" >/dev/null 2>&1
+                    composite -alpha on "${icon_file}" "${mask_file}" "${mask_file}" "${icon_file}"
+                    rm "${mask_file}"
+                else
+                    info "To mask watchOS images run 'brew install imagemagick' first."
+                fi
+
+                count=$((count+1))
+            done
+        ;;
+        "osx")
+            for size in 16 32 64 128 256 512 1024; do
+                sips -Z "$size" "$source_file" --out "${p_dir}/$name-$size.$ext" >/dev/null 2>&1
+                count=$((count+1))
+            done
+        ;;
+        esac
+    done
+done
+
+info "$count icon files are generated."
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,32 @@
+.\" Manpage for iconer.
+.\" Contact Tibor Bödecs to correct errors or typos.
+
+.TH man 1 "28 May 2016" "0.3.0" "iconer man page"
+.SH NAME
+iconer \- App icon generator for Apple platforms
+.SH SYNOPSIS
+iconer [file 1] [file 2] [file n]
+.SH DESCRIPTION
+iconer is a shell program for creating icon assets for Apple platforms. Currently supports iOS, OSX, watchOS operating systems.
+.SH OPTIONS
+The iconer app has many options. You can supply:
+.IP "-h, --help"
+Displays help
+.IP "-v, --version"
+Log version information
+.IP "-i, --info"
+Log info about actions
+.IP "-p, --platform"
+Platform options, by thefault the script will generate for all. (ios, osx, watchos)
+.IP "-t, --target"
+Platform options, by thefault the script will generate for all. (ios, osx, watchos)
+.IP "-b, --background"
+If the source image contains alpha channel the string will fill opaque pixels with this background color.
+.IP "-m, --mask"
+This option is for watchOS icons. If the mask flag is provided the output files are going to be circular png files.
+.SH SEE ALSO
+brew(1) convert(1) composite(1)
+.SH BUGS
+No known bugs. :)
+.SH AUTHOR
+Tibor Bodecs (mail.tib@gmail.com)
