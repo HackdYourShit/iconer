@@ -1,3 +1,10 @@
+## 0.4.0 (2016-06-07)
+
+Bugfixes:
+  - iTunesArtwork generation flag
+  - Xcode Assets.xcassets output format support flag
+
+
 ## 0.3.4 (2016-05-28)
 
 Bugfixes:
@@ -8,6 +15,7 @@ Bugfixes:
 
 Bugfixes:
   - script base directory detection
+
 
 ## 0.3.2 (2016-05-28)
 

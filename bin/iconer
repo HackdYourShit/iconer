@@ -19,7 +19,7 @@ function scriptpath {
 }
 
 
-version="0.3.4"
+version="0.4.0"
 debug=true
 
 
@@ -34,6 +34,8 @@ background="black"
 info=false
 target_dir=false
 mask=false
+artwork=false
+xcode=false
 
 
 
@@ -174,6 +176,12 @@ do
         -i|--info)
             info=true
         ;;
+        -a|--artwork)
+            artwork=true
+        ;;
+        -x|--xcode)
+            xcode=true
+        ;;
         -p|--platform)
             case "$2" in
             ios|osx|watchos)
@@ -205,6 +213,11 @@ do
     shift
 done
 
+if $xcode && [ "${#platforms[@]}" -gt 1 ]; then
+    echo "Please support exactly one platform (ios, osx, watchos) if you want to use the -x, --xcode flag."
+    exit
+fi
+
 ###############################################################################
 #   Do the thing!
 ###############################################################################
@@ -225,13 +238,20 @@ for file in ${files[@]}; do
     base=$(basename "$file")
     name=`rev <<< "$base" | cut -d"." -f2- | rev`
     ext=`rev <<< "$base" | cut -d"." -f1 | rev`
-    work_dir="${path}/${name}-iconer"
+
+    work_dir="${path}"
 
     if [ -d "$target_dir" ]; then
-        work_dir="${target_dir%/}/${name}-iconer"
+        work_dir="${target_dir%/}"
+    else
+        info "\033[1mWarning:\033[0m the target directory is not avialable."
     fi
 
-    mkdir -p "$work_dir"
+    if ! $xcode; then
+        work_dir="${work_dir}/${name}-iconer"
+    fi
+
+    mkdir -p "${work_dir}"
 
     source_file="${work_dir}/iTunesArtwork"
 
@@ -253,11 +273,17 @@ for file in ${files[@]}; do
     fi
 
     for platform in ${platforms[@]}; do
-        p_dir="$work_dir/$platform.xcassets/${name}.appiconset"
+        if $xcode; then
+            p_dir="${work_dir}/Assets.xcassets/AppIcon.appiconset"
+        else
+            p_dir="${work_dir}/${platform}.xcassets/${name}.appiconset"
+        fi
+
         mkdir -p "${p_dir}"
+        find "${p_dir}" -name "*.png" -mindepth 1 -exec rm -r {} \;
 
         contents=$(cat ${resources}/${platform}.json)
-        contents=$(sed "s/\${name}/${name}/g" <<< "$contents")
+        contents=$(sed "s/\${name}/${name}/g" <<< "${contents}")
         echo -e "${contents}" > "${p_dir}/Contents.json"
 
         case "$platform" in
@@ -293,6 +319,10 @@ for file in ${files[@]}; do
         ;;
         esac
     done
+
+    if ! $artwork; then
+        rm "${source_file}"
+    fi
 done
 
 info "$count icon files are generated."

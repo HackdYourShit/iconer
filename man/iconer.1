@@ -1,7 +1,7 @@
 .\" Manpage for iconer.
 .\" Contact Tibor Bödecs to correct errors or typos.
 
-.TH man 1 "28 May 2016" "0.3.4" "iconer man page"
+.TH man 1 "07 June 2016" "0.4.0" "iconer man page"
 .SH NAME
 iconer \- App icon generator for Apple platforms
 .SH SYNOPSIS
@@ -15,11 +15,15 @@ Displays help
 .IP "-v, --version"
 Log version information
 .IP "-i, --info"
-Log info about actions
+Log info about the resizing and converting actions
 .IP "-p, --platform"
 Platform options, by thefault the script will generate for all. (ios, osx, watchos)
 .IP "-t, --target"
-Platform options, by thefault the script will generate for all. (ios, osx, watchos)
+Target directory to generate the icon assets.
+.IP "-a, --artwork"
+If this flag is provided the script will generate an iTunesArtwork file too.
+.IP "-x, --xcode"
+Must be used with the -p, --platform flag, the script will generate Assets.xcassets structure for Xcode to the target directory (only one source icon file supported).
 .IP "-b, --background"
 If the source image contains alpha channel the string will fill opaque pixels with this background color.
 .IP "-m, --mask"
