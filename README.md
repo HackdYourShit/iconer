@@ -2,6 +2,8 @@
 
 App icon generator for Apple platforms.
 
+See this [blog post](https://theswiftdev.com/2016/06/07/app-icon-generator-for-ios-watchos-and-os-x/) for more info.
+
 ### Installation
 
 ```
