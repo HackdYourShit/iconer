@@ -1,3 +1,8 @@
+## 0.4.1 (2016-08-11)
+
+Updates:
+  - new iOS 10 icon sizes support
+
 ## 0.4.0 (2016-06-07)
 
 Bugfixes:

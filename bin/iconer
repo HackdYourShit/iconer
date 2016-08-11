@@ -288,7 +288,7 @@ for file in ${files[@]}; do
 
         case "$platform" in
         "ios")
-            for size in 29 40 58 76 80 87 120 152 167 180; do
+            for size in 20 29 40 58 60 76 80 87 120 152 167 180; do
                 sips -Z "${size}" "${source_file}" --out "${p_dir}/${name}-${size}.${ext}" >/dev/null 2>&1
                 count=$((count+1))
             done
