@@ -1,3 +1,11 @@
+## 0.4.2 (2017-10-04)
+
+Updates:
+
+- new iOS 11 app store marketing icon support
+- new watchOS app store marketing icon support
+- osx target renamed to macos (just in time...)
+
 ## 0.4.1 (2016-08-11)
 
 Updates:

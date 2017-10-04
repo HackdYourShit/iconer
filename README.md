@@ -7,8 +7,7 @@ See this [blog post](https://theswiftdev.com/2016/06/07/app-icon-generator-for-i
 ### Installation
 
 ```
-brew tap tib/tap
-brew install iconer
+brew install corekit/brew/iconer
 ```
 
 ### Usage

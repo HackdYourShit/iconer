@@ -19,7 +19,7 @@ function scriptpath {
 }
 
 
-version="0.4.0"
+version="0.4.2"
 debug=true
 
 
@@ -28,7 +28,7 @@ directory=$(dirname $([ -L $0 ] && scriptpath $0 || echo $0))
 
 resources="${directory}/../resources"
 
-platforms=("ios" "watchos" "osx")
+platforms=("ios" "watchos" "macos")
 files=()
 background="black"
 info=false
@@ -36,74 +36,6 @@ target_dir=false
 mask=false
 artwork=false
 xcode=false
-
-
-
-# function log {
-#     # FUNCNAME
-#     # BASH_SOURCE
-#     # BASH_LINENO
-#     if [ $# -ne 1 ] ; then
-#         echo "Illegal number of log parameters (line: $BASH_LINENO)"
-#         return
-#     fi
-#     if [ "$debug" = true ] ; then
-#         echo $1
-#     fi
-# }
-
-# function log() {
-#     echo "[$( caller )] $*" >&2
-#     echo "BASH_SOURCE: ${BASH_SOURCE[*]}"
-#     echo "BASH_LINENO: ${BASH_LINENO[*]}"
-#     echo "FUNCNAME: ${FUNCNAME[*]}"
-# }
-
-# function foobar() {
-#     log "failed:" "$@"
-# }
-
-# foobar "$@"
-
-# echo "Welcome to Icon generator"
-# echo "Version: ${version}"
-
-
-# function console
-# {
-#     if [ $# -ne 1 ] ; then
-#         echo "Illegal number of log parameters (line: $BASH_LINENO)"
-#         return
-#     fi
-
-#     from=("b" "\/b" "blue" "\/blue")
-#     into=("1" "0" "34" "0")
-
-#     res=$1
-#     for ((i=0;i<${#from[@]};i++)); do
-#         f=${from[$i]}
-#         t=${into[$i]}
-
-#         # echo "$i: $f $t "
-
-        # res=$(sed "s/\[${f}\]/\\\033\[${t}m/g" <<< "$res")
-#     done
-
-#     echo -e "$res"
-# }
-
-
-# console "[b]helloka[/b] valami [blue]kék színű[/blue] izé"
-
-#function join { local IFS="$1"; shift; echo "$*"; }
-
-# function join {
-#     local d=$1
-#     shift
-#     echo -n "$1"
-#     shift
-#     printf "%s" "${@/#/$d}"
-# }
 
 ###############################################################################
 #   Log info
@@ -184,11 +116,11 @@ do
         ;;
         -p|--platform)
             case "$2" in
-            ios|osx|watchos)
+            ios|macos|watchos)
                 platforms=("$2")
             ;;
             *)
-                echo "Error: invalid platform! (avilable: ios, osx, watchos)"
+                echo "Error: invalid platform! (avilable: ios, macos, watchos)"
                 exit
             ;;
             esac
@@ -214,7 +146,7 @@ do
 done
 
 if $xcode && [ "${#platforms[@]}" -gt 1 ]; then
-    echo "Please support exactly one platform (ios, osx, watchos) if you want to use the -x, --xcode flag."
+    echo "Please support exactly one platform (ios, macos, watchos) if you want to use the -x, --xcode flag."
     exit
 fi
 
@@ -288,13 +220,13 @@ for file in ${files[@]}; do
 
         case "$platform" in
         "ios")
-            for size in 20 29 40 58 60 76 80 87 120 152 167 180; do
+            for size in 20 29 40 58 60 76 80 87 120 152 167 180 1024; do
                 sips -Z "${size}" "${source_file}" --out "${p_dir}/${name}-${size}.${ext}" >/dev/null 2>&1
                 count=$((count+1))
             done
         ;;
         "watchos")
-            for size in 48 55 58 87 80 172 196; do
+            for size in 48 55 58 87 80 172 196 1024; do
                 sips -Z "${size}" "${source_file}" --out "${p_dir}/${name}-${size}.${ext}" >/dev/null 2>&1
 
                 if $mask && command -v composite >/dev/null 2>&1 ; then
@@ -311,7 +243,7 @@ for file in ${files[@]}; do
                 count=$((count+1))
             done
         ;;
-        "osx")
+        "macos")
             for size in 16 32 64 128 256 512 1024; do
                 sips -Z "$size" "$source_file" --out "${p_dir}/$name-$size.$ext" >/dev/null 2>&1
                 count=$((count+1))
